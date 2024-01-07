@@ -1,7 +1,8 @@
 const { loadBotConfigAll, startTask, getKeywordReply, getBotReply, updateContacts } = require('../service/intimateService');
 const { getBotConfig } = require('../common/botConfigDb')
-const { sendMessage } = require('../common/sendMessage')
+const { sendMessage,testSendMessage } = require('../common/sendMessage')
 const { FileBox } = require('file-box')
+const {delay}=require('../common/index')
 /**
  * 根据消息类型过滤私聊消息事件
  * @param {*} that bot实例
@@ -33,12 +34,15 @@ async function dispatchFriendFilterByMsgType(that, msg) {
                 //获取配置
                 const botConfig = await getBotConfig();
                 //是否开启私聊
-                if (botConfig.wxBotConfig.talkPrivateAutoReplyFlag == 1) {
+
                     //获取关键字回复
                     let replyContent = await getKeywordReply(content);
+
+
                     if (replyContent != null) {
-                        console.log(`关键字回复：${replyContent}`);
-                        await sendMessage(that,contact,null,replyContent);
+                       // console.log(`关键字回复：${replyContent}`);
+
+                        await testSendMessage(that,contact,null,content);
                     }
                     else {
                         //调用机器人回复
@@ -46,7 +50,7 @@ async function dispatchFriendFilterByMsgType(that, msg) {
                         console.log(`机器人回复：${replyContent}`);
                         await contact.say(replyContent);
                     }
-                }
+
 
             } else {
                 console.log('公众号消息')
@@ -155,12 +159,12 @@ async function onMessage(msg) {
         const msgSelf = msg.self() // 是否自己发给自己的消息
         if (msgSelf) return
         //群聊消息
-        if (room) {
-            await dispatchRoomFilterByMsgType(this, room, msg)
-        } else {
+        // if (room) {
+        //     await dispatchRoomFilterByMsgType(this, room, msg)
+        // } else {
             //私聊消息
             await dispatchFriendFilterByMsgType(this, msg)
-        }
+        // }
     } catch (e) {
         console.log('监听消息失败', e)
     }

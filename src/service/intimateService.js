@@ -31,9 +31,10 @@ async function getSayEveryDayText(everyDayId) {
  * @returns 回复内容
  */
 async function getKeywordReply(keyword) {
-    const { PLATFORM_HOST_URL, APPLICTION_TOKEN } = await getPlatformConfig()
-    let res = await Get(PLATFORM_HOST_URL + `/keyword-reply/${APPLICTION_TOKEN}?keyword=${encodeURI(keyword)}`);
-    return res && res.code == 1 ? res.data : null;
+    // const { PLATFORM_HOST_URL, APPLICTION_TOKEN } = await getPlatformConfig()
+    // let res = await Get(PLATFORM_HOST_URL + `/keyword-reply/${APPLICTION_TOKEN}?keyword=${encodeURI(keyword)}`);
+    // return res && res.code == 1 ? res.data : null;
+    return 1;
 }
 /**
  * 获取机器人回复
@@ -52,7 +53,7 @@ async function getBotReply(keyword, uniqueid) {
  * @param {*} user 
  */
 async function updateWxUserInfo(that) {
-    const { PLATFORM_HOST_URL, APPLICTION_TOKEN } = await getPlatformConfig()
+    //const { PLATFORM_HOST_URL, APPLICTION_TOKEN } = await getPlatformConfig()
     let userInfo = await getcurrentUser(that);
     let user = {
         wxId: userInfo.id,
@@ -60,101 +61,98 @@ async function updateWxUserInfo(that) {
         WxName: userInfo.name,
         AvatarUrl: userInfo.avatarBase64,
     }
-    let res = await Post(PLATFORM_HOST_URL + `/wx-user-info/${APPLICTION_TOKEN}`, user);
+    //let res = await Post(PLATFORM_HOST_URL + `/wx-user-info/${APPLICTION_TOKEN}`, user);
     if (res && res.code == 1) {
-        console.log("上传用户信息成功!,响应结果:", res);
+        console.log("获取用户信息成功!,响应结果:", user);
     }
     else {
-        console.log("上传用户信息失败!,响应结果:", res);
+        console.log("获取用户信息成功!,响应结果:", user);
     }
 }
 /**
- * 上传联系人
+ * 显示联系人
  * @param {*} that 机器人this
  */
 async function updateContacts(that) {
-    const { PLATFORM_HOST_URL, APPLICTION_TOKEN } = await getPlatformConfig()
+    //const { PLATFORM_HOST_URL, APPLICTION_TOKEN } = await getPlatformConfig()
     let contacts = await getContacts(that);
-    let res = await Post(PLATFORM_HOST_URL + `/contacts/${APPLICTION_TOKEN}`, contacts);
-    if (res && res.code == 1) {
-        console.log("上传联系人成功!,响应结果:", res);
-    }
-    else {
-        console.log("上传联系人失败!,响应结果:", res);
-    }
+    //let res = await Post(PLATFORM_HOST_URL + `/contacts/${APPLICTION_TOKEN}`, contacts);
+
+        console.log("显示联系人成功!,响应结果:", contacts);
+
 }
 
 /**
  * 加载机器人所有配置信息 (定时任务，每日说)
  */
-async function loadBotConfigAll() {
-    const { PLATFORM_HOST_URL, APPLICTION_TOKEN } = await getPlatformConfig()
-    let res = await Get(PLATFORM_HOST_URL + `/wx-confg/${APPLICTION_TOKEN}`);
-    if (res && res.code == 1) {
-        console.log("获取机器人配置成功!,响应结果:", res);
-        //写入数据库
-        await addBotConfig(res.data)
-    }
-    else {
-        console.log("获取机器人配置失败!,响应结果:", res);
-    }
-}
+// async function loadBotConfigAll() {
+//     const { PLATFORM_HOST_URL, APPLICTION_TOKEN } = await getPlatformConfig()
+//     let res = await Get(PLATFORM_HOST_URL + `/wx-confg/${APPLICTION_TOKEN}`);
+//     if (res && res.code == 1) {
+//         console.log("获取机器人配置成功!,响应结果:", res);
+//         //写入数据库
+//         await addBotConfig(res.data)
+//     }
+//     else {
+//         console.log("获取机器人配置失败!,响应结果:", res);
+//     }
+// }
 /**
  * 启动 定时任务 每日说 等
  */
-async function startTask(that) {
-    //先停止所有任务
-    cancelAllSchedule();
-    setLocalSchedule("*/30 * * * * ?", async () => {
-        await updateWxUserInfo(that)
-    }, '用户信息更新任务')
-    //获取配置
-    const botConfig = await getBotConfig()
-    //启动定时任务
-    await startTimedTask(that, botConfig.timedTasks);
-    //启动每日说
-    await startSayEveryDay(that, botConfig.sayEveryDays);
-}
+// async function startTask(that) {
+//     //先停止所有任务
+//     cancelAllSchedule();
+//     setLocalSchedule("*/30 * * * * ?", async () => {
+//         await updateWxUserInfo(that)
+//     }, '用户信息更新任务')
+//     //获取配置
+//     const botConfig = await getBotConfig()
+//     //启动定时任务
+//     await startTimedTask(that, botConfig.timedTasks);
+//     //启动每日说
+//     await startSayEveryDay(that, botConfig.sayEveryDays);
+// }
 /**
  * 启动每日说任务
  * @param sayEveryDays 每日说任务信息
  */
-async function startSayEveryDay(that, sayEveryDays) {
-    if (sayEveryDays && sayEveryDays.length > 0) {
-        sayEveryDays.forEach(sayEveryDay => {
-            setLocalSchedule(sayEveryDay.sendTime, async () => {
-                //获取每日说任务发送内容
-                let sendContent = await getSayEveryDayText(sayEveryDay.id);
-                if (sendContent == null) {
-                    console.log(`获取每日说任务(${sayEveryDay.id})发送内容为空`);
-                    return;
-                }
-                //获取接收人
-                let receivingWxNames = sayEveryDay.receivingObjectName.split(',');
-                //循环发送消息
-                receivingWxNames.forEach(async (wxName, index) => {
-                    //查找联系人
-                    let contact = await (await that.Contact.find({ alias: wxName })) || (await that.Contact.find({ name: wxName }))
-                    if (contact && sendContent) {
-                        console.log(`每日说任务(${sayEveryDay.id})给 ${receivingWxNames[index]} 发送消息:${sendContent}`)
-                        await sendMessage(that, contact, null, sendContent);
-                    }
-                    //查找群
-                    let room = await that.Room.find({ topic: wxName })
-                    if (room && sendContent) {
-                        console.log(`每日说任务(${sayEveryDay.id})给 ${receivingWxNames[index]} 发送消息:${sendContent}`)
-                        await sendMessage(that, null, room, sendContent);
-                    }
-                });
-            }, `每日说任务-${sayEveryDay.id}`);
-            console.log(`每日说任务-${sayEveryDay.id} 设置成功`)
-        })
-        console.log("每日说任务设置完成");
-    }
-    else {
-        console.log("没有配置每日说任务");
-    }
-}
+// async function startSayEveryDay(that, sayEveryDays) {
+//     if (sayEveryDays && sayEveryDays.length > 0) {
+//         sayEveryDays.forEach(sayEveryDay => {
+//             setLocalSchedule(sayEveryDay.sendTime, async () => {
+//                 //获取每日说任务发送内容
+//                 let sendContent = await getSayEveryDayText(sayEveryDay.id);
+//                 if (sendContent == null) {
+//                     console.log(`获取每日说任务(${sayEveryDay.id})发送内容为空`);
+//                     return;
+//                 }
+//                 //获取接收人
+//                 let receivingWxNames = sayEveryDay.receivingObjectName.split(',');
+//                 //循环发送消息
+//                 receivingWxNames.forEach(async (wxName, index) => {
+//                     //查找联系人
+//                     let contact = await (await that.Contact.find({ alias: wxName })) || (await that.Contact.find({ name: wxName }))
+//                     if (contact && sendContent) {
+//                         console.log(`每日说任务(${sayEveryDay.id})给 ${receivingWxNames[index]} 发送消息:${sendContent}`)
+//                         await sendMessage(that, contact, null, sendContent);
+//                     }
+//                     //查找群
+//                     let room = await that.Room.find({ topic: wxName })
+//                     if (room && sendContent) {
+//                         console.log(`每日说任务(${sayEveryDay.id})给 ${receivingWxNames[index]} 发送消息:${sendContent}`)
+//                         await sendMessage(that, null, room, sendContent);
+//                     }
+//                 });
+//             }, `每日说任务-${sayEveryDay.id}`);
+//             console.log(`每日说任务-${sayEveryDay.id} 设置成功`)
+//         })
+//         console.log("每日说任务设置完成");
+//     }
+//     else {
+//         console.log("没有配置每日说任务");
+//     }
+// }
 /**
  * 启动定时任务
  * @param timedTasks 定时任务信息
@@ -200,20 +198,20 @@ async function startTimedTask(that, timedTasks) {
  * 获取平台配置
  * @returns { PLATFORM_HOST_URL, APPLICTION_TOKEN }
  */
-async function getPlatformConfig() {
-    const env = await getPlatformDbConfig()
-    const { PLATFORM_HOST_URL, APPLICTION_TOKEN } = env
-    if (!PLATFORM_HOST_URL || !APPLICTION_TOKEN) {
-        console.warn('未设置PLATFORM_HOST_URL或APPLICTION_TOKEN，请设置后重试')
-        return
-    }
-    return { PLATFORM_HOST_URL, APPLICTION_TOKEN }
-}
+// async function getPlatformConfig() {
+//     const env = await getPlatformDbConfig()
+//     const { PLATFORM_HOST_URL, APPLICTION_TOKEN } = env
+//     if (!PLATFORM_HOST_URL || !APPLICTION_TOKEN) {
+//         console.warn('未设置PLATFORM_HOST_URL或APPLICTION_TOKEN，请设置后重试')
+//         return
+//     }
+//     return { PLATFORM_HOST_URL, APPLICTION_TOKEN }
+// }
 module.exports = {
     updateWxUserInfo,
     updateContacts,
-    startTask,
-    loadBotConfigAll,
+    //startTask,
+    //loadBotConfigAll,
     getBotReply,
     getKeywordReply,
 
