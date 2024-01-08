@@ -41,7 +41,7 @@ async function PostGetBody(url, data) {
     } catch (error) {
         console.error("An error occurred:", error);
         // 手动关闭连接（如果需要）
-         request.abort(); // 通常不需要手动关闭连接，因为 request-promise 会自动处理连接管理
+         //rp.abort(); // 通常不需要手动关闭连接，因为 request-promise 会自动处理连接管理
     }
 }
 /**

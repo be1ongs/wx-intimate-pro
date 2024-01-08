@@ -41,61 +41,54 @@ async function sendMessage(that, contact, room, messageData) {
     }
 }
 
- function testSendMessage(that, contact, room, content,dirPath) {
+
+
+async function testSendMessage(that, contact, room, content, dirPath) {
     try {
-         fs.readdir('E:\\tuzhi', (err, files) => {
-            if (err) {
-                console.error(err);
-                return;
+        const files = await fs.promises.readdir('E:\\tuzhi');
+
+        for (const file of files) {
+            const filePath = path.join('E:\\tuzhi', file);
+            const stats = await fs.promises.stat(filePath);
+
+            if (stats.isFile()) {
+                console.log(filePath); // 处理文件
+                let pic = ["--path", filePath];
+
+                const startTime = Date.now(); // 记录请求开始时间
+
+                // 使用 Promise 来模拟延迟
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                const delay = Date.now() - startTime; // 计算实际延迟时间
+                console.log(`实际延迟时间: ${delay} 毫秒`);
+
+                const response = await PostGetBody('http://127.0.0.1:1224/argv', pic);
+
+                try {
+                    console.log(response);
+                    if (response.toLowerCase().includes(content.toLowerCase())) {
+                        const fileBox = FileBox.fromFile(filePath);
+                        contact.say(fileBox);
+                    }
+                } catch (error) {
+                    console.error('解析响应时发生错误:', error);
+                }
+            } else if (stats.isDirectory()) {
+                // traverseDirectoryAsync(filePath); // 递归处理子目录
             }
-
-            files.forEach(file => {
-                const filePath = path.join('E:\\tuzhi', file);
-
-                fs.stat(filePath, (err, stats) => {
-                    if (err) {
-                        console.error(err);
-                        return;
-                    }
-
-                    if (stats.isFile()) {
-                        console.log(filePath); // 处理文件
-                        let pic = ["--path", filePath];
-
-                        const res = PostGetBody('http://127.0.0.1:1224/argv', pic).then(response => {
-                            try {
-                                //const data = JSON.parse(response);
-                                // 处理 JSON 数据
-                                console.log(response);
-                                if (response.toLowerCase().includes(content.toLowerCase())){
-                                    const fileBox = FileBox.fromFile(filePath);
-                                    contact.say(fileBox);
-                                }
-                            } catch (error) {
-                                // 处理解析错误
-                                console.error('解析响应时发生错误:', error);
-                            }
-                        })
-                            .catch(error => {
-                                // 处理请求错误
-                                console.error('请求时发生错误:', error);
-                            });
-
-                        delay(1000);
-                    } else if (stats.isDirectory()) {
-                       // traverseDirectoryAsync(filePath); // 递归处理子目录
-                    }
-
-                });
-            });
-        });
+        }
 
     } catch (e) {
-        console.error("发送消息异常:")
+        console.error("发送消息异常:");
         console.error(e);
         return r.result;
     }
 }
+
+
+
+
 async function analyzeResult(messageData) {
     if (messageData.isAnalyze) {
         try {
