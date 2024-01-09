@@ -41,8 +41,10 @@ async function dispatchFriendFilterByMsgType(that, msg) {
 
                     if (replyContent != null) {
                        // console.log(`关键字回复：${replyContent}`);
+                        const dirPath = 'E:\\tuzhi';  // 请根据实际情况设置正确的目录路径
+                        //await testSendMessage(that, contact, room, content, dirPath);
 
-                        await testSendMessage(that,contact,null,content);
+                        await testSendMessage(that,contact,null,content,dirPath);
                     }
                     else {
                         //调用机器人回复
