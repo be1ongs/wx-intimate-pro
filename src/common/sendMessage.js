@@ -83,7 +83,6 @@ async function callOcrService(filePath) {
 async function findAndReturnFilePaths(content) {
     const images = await ImageModel.find({  $or: [
             { keyword: { $regex: content, $options: 'i' } },
-            { filePath: { $regex: content, $options: 'i' } },
             { ocrResult: { $regex: content, $options: 'i' } }
         ] });
     const filePaths = images.reduce((uniquePaths, image) => {

@@ -3,6 +3,8 @@ const { getBotConfig } = require('../common/botConfigDb')
 const { sendMessage,testSendMessage } = require('../common/sendMessage')
 const { FileBox } = require('file-box')
 const {delay}=require('../common/index')
+const pdf2image = require('pdf2image');
+const fs = require('fs');
 /**
  * 根据消息类型过滤私聊消息事件
  * @param {*} that bot实例
@@ -58,6 +60,38 @@ async function dispatchFriendFilterByMsgType(that, msg) {
                 console.log('公众号消息')
             }
             break
+        case that.Message.Type.Attachment:
+            // 获取附件名称
+            const fileBox = await msg.toFileBox()
+            const fileName = fileBox.name;
+
+            // 判断附件是否为 PDF 文件
+            if (fileName.toLowerCase().endsWith('.pdf')) {
+                console.log(`Received a PDF file: ${fileName}`);
+                // 保存文件到本地目录
+                const filePath =  'E:\\tuzhipdf\\' + fileName;
+                console.log(`File Path: ${filePath}`);
+                if (fileBox.ready()) {
+                    const pdfBuffer = await fileBox.toBuffer();
+                    // 确保 pdfBuffer 非空
+                    if (pdfBuffer.length > 0) {
+                        fs.writeFileSync(filePath, pdfBuffer, 'binary');
+                        console.log(`PDF file saved to: ${filePath}`);
+
+                        const savedPdfBuffer = fs.readFileSync(filePath);
+                        console.log(`Saved PDF Buffer size: ${savedPdfBuffer.length}`);
+
+                        // 异步处理文件，例如解析 PDF 内容
+                        processPdfFile(filePath);
+                    } else {
+                        console.error('Error: PDF Buffer is empty or invalid.');
+                    }
+                }
+
+            }
+
+            console.log(`发消息人${await contact.name()}:发了一个pdf文件`)
+            break
         case that.Message.Type.Emoticon:
             console.log(`发消息人${await contact.name()}:发了一个表情`)
             break
@@ -78,6 +112,37 @@ async function dispatchFriendFilterByMsgType(that, msg) {
     }
 
 }
+
+// 输出图片的路径
+const outputImagePath  = 'E:\\tuzhi\\';
+
+// 设置转换选项
+const options = {
+    format: 'jpeg', // 输出格式，例如 "jpeg" 或 "png"
+    out_dir: outputImagePath, // 输出目录
+    out_prefix: 'page', // 输出文件前缀
+    page: null // 转换的页码，null 表示转换所有页
+};
+
+
+async function processPdfFile(filePath) {
+    console.log(`开始异步处理文件: ${filePath}`);
+
+    try {
+        const images = await pdf2image.convertPDF(filePath, options);
+        images.forEach((image, index) => {
+            // 将每个图片保存到文件
+            const imagePath = `${outputImagePath}/page_${index + 1}.${options.format}`;
+            fs.writeFileSync(imagePath, image);
+            console.log(`Page ${index + 1} saved to ${imagePath}`);
+        });
+    } catch (error) {
+        console.error('Error converting PDF to images:', error);
+    }
+}
+
+
+
 
 /**
  * 根据消息类型过滤群消息事件

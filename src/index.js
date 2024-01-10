@@ -1,5 +1,6 @@
 
 const Wechaty = require('wechaty');
+const { Puppeteer } = require('wechaty-puppet-puppeteer');
 const onMessage = require('./handers/on-message')
 const onLogin = require('./handers/on-login')
 const onScan = require('./handers/on-scan')
@@ -24,12 +25,13 @@ const { WechatyBuilder, log } = Wechaty;
 // addPlatformDbConfig(initConfig)
 // get a Wechaty instance
 
+
 const bot = WechatyBuilder.singleton({
     name: 'pg',
     puppetOptions: {
         uos: true
     },
-    puppet: 'wechaty-puppet-wechat',
+    puppet: Puppeteer,
 })
 
 
